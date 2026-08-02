@@ -206,6 +206,43 @@
             margin-bottom: 30px;
         }
 
+        .city-error-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fecaca;
+            padding: 14px 22px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+            animation: slideUp 0.3s ease;
+        }
+
+        .city-error-banner.show {
+            display: flex;
+        }
+
+        .city-error-close {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.7;
+            padding: 0 4px;
+            transition: opacity 0.2s ease;
+        }
+
+        .city-error-close:hover {
+            opacity: 1;
+        }
+
         .city-search-box {
             backdrop-filter: blur(10px);
             background: var(--glass-bg);
@@ -847,6 +884,11 @@
                 <div class="city-selection-subtitle">Choose a city to see the weather forecast</div>
             </div>
 
+            <div class="city-error-banner" id="cityErrorBanner">
+                <span id="cityErrorText"></span>
+                <button class="city-error-close" onclick="hideCityError()" aria-label="Dismiss">✕</button>
+            </div>
+
             <input 
                 type="text" 
                 id="citySearchInput" 
@@ -902,10 +944,10 @@
                 </div>
             </div>
 
-            <!-- 30-Day Forecast -->
+            <!-- Forecast -->
             <div class="forecasts">
                 <div class="forecast-card">
-                    <h3>📅 30-Day Forecast</h3>
+                    <h3 id="forecastTitle">📅 Forecast</h3>
                     <div class="daily-forecast" id="dailyForecast"></div>
                 </div>
             </div>
@@ -914,6 +956,9 @@
 
     <script>
         // ========== CONFIG ==========
+        // Free key: sign up at https://www.weatherapi.com/signup.aspx (instant, no card),
+        // then paste your key below. If errors still mention your key after that fix,
+        // your key is invalid/expired/over quota — the banner will now say exactly which.
         const API_KEY = 'f5ec96c9efc94e1f7da114340242001';
         
         const GEORGIA_CITIES = [
@@ -1136,19 +1181,52 @@
         }
 
         // ========== FETCH WEATHER ==========
+        // Free WeatherAPI.com keys only return a 3-day forecast. Asking for more
+        // (this file used to ask for 30) makes the ENTIRE request fail, for every
+        // city, with an error that was previously being swallowed and hidden from you.
+        // If you upgrade to a paid WeatherAPI plan, you can raise this (paid plans
+        // typically support up to 10-14 days).
+        const FORECAST_DAYS = 3;
+
         async function fetchWeather(cityName) {
             try {
                 console.log('Fetching weather for:', cityName);
-                const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${cityName}&days=30&aqi=yes`);
-                if (!response.ok) throw new Error('City not found');
-                
+                const url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${encodeURIComponent(cityName)}&days=${FORECAST_DAYS}&aqi=yes`;
+                const response = await fetch(url);
                 const data = await response.json();
+
+                if (!response.ok) {
+                    // WeatherAPI still returns a JSON body on failure with the real reason
+                    // (bad/expired key, quota exceeded, unknown city, etc). Show that instead
+                    // of a generic message so it's actually possible to diagnose.
+                    const apiMessage = (data && data.error && data.error.message)
+                        ? data.error.message
+                        : `Request failed (HTTP ${response.status})`;
+                    throw new Error(apiMessage);
+                }
+
                 displayWeather(data);
                 showWeatherScreen();
             } catch (error) {
-                alert('❌ Error loading weather for ' + cityName);
                 console.error('Weather fetch error:', error);
+                showCityError(cityName, error.message || 'Unknown error');
             }
+        }
+
+        // ========== CITY ERROR BANNER ==========
+        let cityErrorTimeout;
+
+        function showCityError(cityName, message) {
+            const banner = document.getElementById('cityErrorBanner');
+            const text = document.getElementById('cityErrorText');
+            text.textContent = `Couldn't load weather for ${cityName}: ${message}`;
+            banner.classList.add('show');
+            clearTimeout(cityErrorTimeout);
+            cityErrorTimeout = setTimeout(hideCityError, 7000);
+        }
+
+        function hideCityError() {
+            document.getElementById('cityErrorBanner').classList.remove('show');
         }
 
         function displayWeather(data) {
@@ -1245,7 +1323,8 @@
             `).join('');
             document.getElementById('chancesList').innerHTML = chancesHTML;
 
-            // 30-Day Forecast
+            // Forecast
+            document.getElementById('forecastTitle').textContent = `📅 ${forecast.length}-Day Forecast`;
             const dailyHTML = forecast.map(day => {
                 const date = new Date(day.date);
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
