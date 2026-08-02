@@ -270,12 +270,28 @@
         }
 
         .city-group-title {
-            font-size: 20px;
+            font-size: 13px;
             font-weight: 700;
-            margin: 30px 0 15px;
-            opacity: 0.9;
-            letter-spacing: 0.3px;
+            margin: 35px 0 15px;
+            opacity: 0.6;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            position: relative;
         }
+
+        .city-group-title::before,
+        .city-group-title::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .city-group-title::before { left: 0; }
+        .city-group-title::after { right: 0; }
 
         .city-group-title:first-child {
             margin-top: 0;
