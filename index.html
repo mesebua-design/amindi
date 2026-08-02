@@ -1698,25 +1698,14 @@
             const grid = document.getElementById('citiesGrid');
             const searchInput = document.getElementById('citySearchInput');
 
-            function renderCityGroup(title, cities) {
-                if (!cities.length) return '';
-                return `
-                    <div class="city-group-title">${title}</div>
-                    <div class="cities-grid">
-                        ${cities.map(city => `
-                            <div class="city-card" onclick="fetchWeather('${city.query}', '${city.name}')">
-                                <div class="city-card-emoji">${city.emoji}</div>
-                                <div class="city-card-name">${city.name}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-
             function renderCities(georgianList, internationalList) {
-                grid.innerHTML =
-                    renderCityGroup('🇬🇪 ქართველოს ქალაქები', georgianList) +
-                    renderCityGroup('🌍 უცხოეთის ქალაქები', internationalList);
+                const combined = [...georgianList, ...internationalList];
+                grid.innerHTML = combined.map(city => `
+                    <div class="city-card" onclick="fetchWeather('${city.query}', '${city.name}')">
+                        <div class="city-card-emoji">${city.emoji}</div>
+                        <div class="city-card-name">${city.name}</div>
+                    </div>
+                `).join('');
             }
 
             renderCities(GEORGIA_CITIES, INTERNATIONAL_CITIES);
