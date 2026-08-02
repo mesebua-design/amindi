@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Georgia Weather - amindi.ge Style</title>
+    <title>Georgia Weather</title>
     <style>
         * {
             margin: 0;
@@ -312,7 +312,6 @@
             font-weight: 600;
             transition: all 0.3s ease;
             margin-bottom: 30px;
-            border: none;
         }
 
         .back-button:hover {
@@ -320,7 +319,7 @@
             transform: translateX(-5px);
         }
 
-        /* Current Weather Card */
+        /* Current Weather */
         .current-weather {
             backdrop-filter: blur(20px);
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
@@ -328,7 +327,7 @@
             border-radius: 30px;
             padding: 40px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 40px;
             align-items: center;
             margin-bottom: 30px;
@@ -374,10 +373,72 @@
             opacity: 0.8;
         }
 
+        /* Avatar Section */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar-container {
+            width: 180px;
+            height: 300px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-body {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .avatar-head {
+            font-size: 60px;
+            animation: headBob 2s ease-in-out infinite;
+        }
+
+        @keyframes headBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .avatar-outfit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 30px;
+            animation: outfitRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes outfitRotate {
+            0%, 100% { transform: scaleX(1); }
+            50% { transform: scaleX(-1); }
+        }
+
+        .avatar-label {
+            font-size: 12px;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 10px;
+        }
+
         /* Weather Details Grid */
         .weather-details {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -413,6 +474,17 @@
             opacity: 0.8;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        /* Wind Card - Prominent */
+        .wind-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(100, 200, 255, 0.2), rgba(100, 150, 255, 0.1));
+            border: 2px solid rgba(100, 200, 255, 0.3);
+        }
+
+        .wind-card .detail-value {
+            font-size: 32px;
         }
 
         /* Roast Section */
@@ -553,10 +625,10 @@
             text-align: right;
         }
 
-        /* Forecasts */
+        /* Forecasts - 30 Day */
         .forecasts {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
@@ -574,13 +646,13 @@
             margin-bottom: 20px;
         }
 
-        .hourly-forecast {
+        .daily-forecast {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
         }
 
-        .hourly-item {
+        .daily-item {
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -590,83 +662,40 @@
             transition: all 0.3s ease;
         }
 
-        .hourly-item:hover {
+        .daily-item:hover {
             background: rgba(255, 255, 255, 0.15);
             transform: translateY(-5px);
         }
 
-        .hourly-time {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 8px;
-        }
-
-        .hourly-icon {
-            font-size: 28px;
-            margin: 8px 0;
-        }
-
-        .hourly-temp {
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .daily-forecast {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .daily-item {
-            display: grid;
-            grid-template-columns: 100px 1fr 80px 80px 80px;
-            gap: 15px;
-            align-items: center;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .daily-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
         .daily-day {
             font-weight: 600;
-            text-align: left;
-        }
-
-        .daily-desc {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 12px;
+            margin-bottom: 8px;
             opacity: 0.9;
         }
 
         .daily-icon {
-            font-size: 24px;
-        }
-
-        .daily-temps {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
+            font-size: 28px;
+            margin: 8px 0;
         }
 
         .daily-high {
             font-weight: 700;
+            font-size: 16px;
         }
 
         .daily-low {
             opacity: 0.7;
+            font-size: 14px;
         }
 
         .daily-rain {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 14px;
+            justify-content: center;
+            gap: 3px;
+            font-size: 12px;
+            margin-top: 5px;
         }
 
         ::-webkit-scrollbar {
@@ -690,15 +719,11 @@
         /* Responsive */
         @media (max-width: 1024px) {
             .current-weather {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr;
             }
 
-            .forecasts {
-                grid-template-columns: 1fr;
-            }
-
-            .recommendations {
-                grid-template-columns: 1fr;
+            .avatar-section {
+                grid-column: 1 / -1;
             }
 
             .cities-grid {
@@ -707,22 +732,17 @@
         }
 
         @media (max-width: 768px) {
+            .current-weather {
+                grid-template-columns: 1fr;
+                padding: 25px;
+            }
+
             .weather-details {
                 grid-template-columns: repeat(2, 1fr);
             }
 
-            .hourly-forecast {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .daily-item {
-                grid-template-columns: 80px 1fr 60px;
-                gap: 10px;
-            }
-
-            .daily-temps,
-            .daily-rain {
-                display: none;
+            .daily-forecast {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
 
             .roast-section {
@@ -730,20 +750,25 @@
                 text-align: center;
             }
 
+            .recommendations {
+                grid-template-columns: 1fr;
+            }
+
             .cities-grid {
                 grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
 
-            .city-selection-container {
-                padding: 30px 20px;
+            .avatar-container {
+                width: 150px;
+                height: 250px;
             }
 
-            .city-selection-title {
-                font-size: 28px;
+            .avatar-head {
+                font-size: 48px;
             }
 
-            .current-weather {
-                padding: 25px;
+            .avatar-outfit {
+                font-size: 24px;
             }
         }
 
@@ -769,8 +794,29 @@
                 padding: 15px;
             }
 
-            .hourly-forecast {
+            .cities-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .recommendation-card {
+                padding: 20px;
+            }
+
+            .daily-forecast {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+
+            .avatar-container {
+                width: 120px;
+                height: 200px;
+            }
+
+            .avatar-head {
+                font-size: 36px;
+            }
+
+            .avatar-outfit {
+                font-size: 18px;
             }
 
             .roast-icon {
@@ -779,18 +825,6 @@
 
             .roast-text {
                 font-size: 14px;
-            }
-
-            .cities-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .city-selection-container {
-                max-height: 90vh;
-            }
-
-            .recommendations {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -838,6 +872,13 @@
                     <div class="weather-desc" id="weatherDesc">-</div>
                     <div class="feels-like" id="feelsLike">-</div>
                 </div>
+                <div class="avatar-section">
+                    <div class="avatar-container">
+                        <div class="avatar-head">👤</div>
+                        <div class="avatar-outfit" id="avatarOutfit">👕🩳</div>
+                    </div>
+                    <div class="avatar-label" id="avatarLabel">Your Outfit Today</div>
+                </div>
             </div>
 
             <!-- Weather Details -->
@@ -861,14 +902,10 @@
                 </div>
             </div>
 
-            <!-- Forecasts -->
+            <!-- 30-Day Forecast -->
             <div class="forecasts">
                 <div class="forecast-card">
-                    <h3>⏰ 24-Hour Forecast</h3>
-                    <div class="hourly-forecast" id="hourlyForecast"></div>
-                </div>
-                <div class="forecast-card">
-                    <h3>📅 7-Day Forecast</h3>
+                    <h3>📅 30-Day Forecast</h3>
                     <div class="daily-forecast" id="dailyForecast"></div>
                 </div>
             </div>
@@ -965,6 +1002,17 @@
         const rainItems = ['☔ Umbrella', '👟 Waterproof shoes'];
         const snowItems = ['⛷️ Winter coat', '🧤 Mittens', '🎿 Snow boots'];
 
+        // ========== AVATAR OUTFITS ==========
+        const avatarOutfits = {
+            veryHot: '👕🩳🕶️',
+            hot: '👕🩳🧢',
+            warm: '👔🩳',
+            mild: '👕👖',
+            cool: '🧥👖',
+            cold: '🧥👖🧣',
+            veryCold: '🧥🎩🧤',
+        };
+
         // ========== CHANCE ITEMS ==========
         const chanceItems = [
             { emoji: '☕', text: 'Buying Coffee' },
@@ -1021,6 +1069,16 @@
             if (temp < 0) outfit = [...outfit, ...snowItems];
             
             return outfit;
+        }
+
+        function getAvatarOutfit(temp, rainChance) {
+            if (temp > 30) return avatarOutfits.veryHot;
+            else if (temp > 25) return avatarOutfits.hot;
+            else if (temp > 20) return avatarOutfits.warm;
+            else if (temp > 15) return avatarOutfits.mild;
+            else if (temp > 10) return avatarOutfits.cool;
+            else if (temp > 0) return avatarOutfits.cold;
+            else return avatarOutfits.veryCold;
         }
 
         function getWindDescription(speed) {
@@ -1080,15 +1138,16 @@
         // ========== FETCH WEATHER ==========
         async function fetchWeather(cityName) {
             try {
-                const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${cityName}&days=7&aqi=yes`);
+                console.log('Fetching weather for:', cityName);
+                const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${cityName}&days=30&aqi=yes`);
                 if (!response.ok) throw new Error('City not found');
                 
                 const data = await response.json();
                 displayWeather(data);
                 showWeatherScreen();
             } catch (error) {
-                alert('Error loading weather for ' + cityName);
-                console.error(error);
+                alert('❌ Error loading weather for ' + cityName);
+                console.error('Weather fetch error:', error);
             }
         }
 
@@ -1111,7 +1170,11 @@
             const rainDesc = getRainDescription(rainChance);
             const windDesc = getWindDescription(windSpeed);
 
-            // Weather details
+            // Avatar outfit
+            const avatarOutfit = getAvatarOutfit(current.temp_c, rainChance);
+            document.getElementById('avatarOutfit').textContent = avatarOutfit;
+
+            // Weather details with WIND prominently displayed
             const detailsHTML = `
                 <div class="detail-card">
                     <div class="detail-icon">💧</div>
@@ -1121,22 +1184,17 @@
                 <div class="detail-card">
                     <div class="detail-icon">🌧️</div>
                     <div class="detail-value">${rainChance}%</div>
-                    <div class="detail-label">Rain Chance (${rainDesc})</div>
-                </div>
-                <div class="detail-card">
-                    <div class="detail-icon">💨</div>
-                    <div class="detail-value">${Math.round(windSpeed)} km/h</div>
-                    <div class="detail-label">${windDesc}</div>
+                    <div class="detail-label">Rain (${rainDesc})</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🔽</div>
-                    <div class="detail-value">${Math.round(current.pressure_mb)} mb</div>
-                    <div class="detail-label">Pressure</div>
+                    <div class="detail-value">${Math.round(current.pressure_mb)}</div>
+                    <div class="detail-label">Pressure (mb)</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">👁️</div>
-                    <div class="detail-value">${Math.round(current.vis_km)} km</div>
-                    <div class="detail-label">Visibility</div>
+                    <div class="detail-value">${Math.round(current.vis_km)}</div>
+                    <div class="detail-label">Visibility (km)</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">☀️</div>
@@ -1145,13 +1203,18 @@
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🌅</div>
-                    <div class="detail-value">${forecast[0].astro.sunrise}</div>
+                    <div class="detail-value" style="font-size: 16px;">${forecast[0].astro.sunrise}</div>
                     <div class="detail-label">Sunrise</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🌇</div>
-                    <div class="detail-value">${forecast[0].astro.sunset}</div>
+                    <div class="detail-value" style="font-size: 16px;">${forecast[0].astro.sunset}</div>
                     <div class="detail-label">Sunset</div>
+                </div>
+                <div class="detail-card wind-card">
+                    <div class="detail-icon">💨</div>
+                    <div class="detail-value">${Math.round(windSpeed)} km/h</div>
+                    <div class="detail-label">${windDesc}</div>
                 </div>
             `;
             document.getElementById('weatherDetails').innerHTML = detailsHTML;
@@ -1182,35 +1245,20 @@
             `).join('');
             document.getElementById('chancesList').innerHTML = chancesHTML;
 
-            // Hourly Forecast
-            const hourlyHTML = forecast[0].hour.slice(0, 24).map(hour => {
-                const time = new Date(hour.time).getHours();
-                return `
-                    <div class="hourly-item">
-                        <div class="hourly-time">${time}:00</div>
-                        <div class="hourly-icon">${getWeatherIcon(hour.condition.text)}</div>
-                        <div class="hourly-temp">${Math.round(hour.temp_c)}°</div>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('hourlyForecast').innerHTML = hourlyHTML;
-
-            // 7-Day Forecast
+            // 30-Day Forecast
             const dailyHTML = forecast.map(day => {
                 const date = new Date(day.date);
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const dayDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 return `
                     <div class="daily-item">
-                        <div class="daily-day">${dayName}</div>
-                        <div class="daily-desc">
-                            <div class="daily-icon">${getWeatherIcon(day.day.condition.text)}</div>
-                            <span>${day.day.condition.text}</span>
+                        <div class="daily-day">${dayName}<br>${dayDate}</div>
+                        <div class="daily-icon">${getWeatherIcon(day.day.condition.text)}</div>
+                        <div>
+                            <div class="daily-high">${Math.round(day.day.maxtemp_c)}°</div>
+                            <div class="daily-low">${Math.round(day.day.mintemp_c)}°</div>
                         </div>
-                        <div class="daily-temps">
-                            <span class="daily-high">${Math.round(day.day.maxtemp_c)}°</span>
-                            <span class="daily-low">${Math.round(day.day.mintemp_c)}°</span>
-                        </div>
-                        <div class="daily-rain">🌧️ ${Math.round(day.day.daily_chance_of_rain)}%</div>
+                        <div class="daily-rain">🌧️${day.day.daily_chance_of_rain}%</div>
                     </div>
                 `;
             }).join('');
