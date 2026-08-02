@@ -960,6 +960,7 @@
                     <div class="temperature" id="temperature">-</div>
                     <div class="weather-desc" id="weatherDesc">-</div>
                     <div class="feels-like" id="feelsLike">-</div>
+                    <div class="feels-like" id="yesterdayCompare" style="opacity:0.85;">-</div>
                 </div>
                 <div class="avatar-section">
                     <div class="avatar-container">
@@ -977,6 +978,12 @@
             <div class="roast-section" id="roastSection">
                 <div class="roast-icon" id="roastIcon">😂</div>
                 <div class="roast-text" id="roastText">Loading weather roast...</div>
+            </div>
+
+            <!-- Dog Walk Score -->
+            <div class="roast-section" id="dogWalkSection">
+                <div class="roast-icon" id="dogWalkIcon">🐕</div>
+                <div class="roast-text" id="dogWalkText">Loading dog walk score...</div>
             </div>
 
             <!-- Forecast -->
@@ -1295,7 +1302,7 @@
         }
 
         // ========== FETCH WEATHER (OpenWeather API) ==========
-        // Free-tier friendly: Current Weather + 5 day/3-hour Forecast.
+        // Free-tier friendly: Current Weather + 5 day/3-hour Forecast + Air Pollution.
         // (OpenWeather's One Call 3.0 API needs a card on file even on the free
         // tier, so we avoid it and build daily forecast cards ourselves from the
         // 3-hourly data instead.)
@@ -1303,24 +1310,36 @@
             try {
                 console.log('Fetching weather for:', cityQuery);
                 const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric`;
-                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric`;
 
-                const [currentRes, forecastRes] = await Promise.all([
-                    fetch(currentUrl),
-                    fetch(forecastUrl),
-                ]);
-
+                const currentRes = await fetch(currentUrl);
                 const currentData = await currentRes.json();
-                const forecastData = await forecastRes.json();
-
                 if (!currentRes.ok) {
                     throw new Error((currentData && currentData.message) ? currentData.message : `Request failed (HTTP ${currentRes.status})`);
                 }
+
+                // Use the coordinates OpenWeather resolved for this city so the
+                // forecast and air-quality calls line up exactly with "current".
+                const { lat, lon } = currentData.coord;
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+                const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
+
+                const [forecastRes, aqiRes] = await Promise.all([
+                    fetch(forecastUrl),
+                    fetch(aqiUrl),
+                ]);
+
+                const forecastData = await forecastRes.json();
                 if (!forecastRes.ok) {
                     throw new Error((forecastData && forecastData.message) ? forecastData.message : `Forecast request failed (HTTP ${forecastRes.status})`);
                 }
 
-                displayWeather(currentData, forecastData, displayName, cityQuery);
+                // Air quality is a nice-to-have; don't fail the whole screen if it errors.
+                let aqiData = null;
+                if (aqiRes.ok) {
+                    aqiData = await aqiRes.json();
+                }
+
+                displayWeather(currentData, forecastData, displayName, cityQuery, aqiData);
                 showWeatherScreen();
             } catch (error) {
                 console.error('Weather fetch error:', error);
@@ -1381,13 +1400,124 @@
             });
         }
 
-        function displayWeather(current, forecast, displayName, cityQuery) {
+        // ========== AIR QUALITY ==========
+        function getAqiInfo(aqi) {
+            const map = {
+                1: { label: 'Good', emoji: '🟢' },
+                2: { label: 'Fair', emoji: '🟡' },
+                3: { label: 'Moderate', emoji: '🟠' },
+                4: { label: 'Poor', emoji: '🔴' },
+                5: { label: 'Very Poor', emoji: '🟣' },
+            };
+            return map[aqi] || { label: 'Unknown', emoji: '⚪' };
+        }
+
+        // ========== THUNDERSTORM RISK ==========
+        // Looks at the next 24h (8 x 3-hour slots) of forecast data for
+        // thunderstorm condition codes (200-232) and their rain probability.
+        function getThunderRisk(forecastList, currentWeatherId) {
+            const next24h = (forecastList || []).slice(0, 8);
+            let maxPop = 0;
+            let hasThunderCode = currentWeatherId >= 200 && currentWeatherId < 300;
+
+            next24h.forEach(entry => {
+                const id = entry.weather[0].id;
+                if (id >= 200 && id < 300) {
+                    hasThunderCode = true;
+                    maxPop = Math.max(maxPop, entry.pop || 0);
+                }
+            });
+
+            const pct = Math.round(maxPop * 100);
+            let level, emoji;
+            if (!hasThunderCode || pct < 20) {
+                level = 'Low'; emoji = '🌤️';
+            } else if (pct < 50) {
+                level = 'Moderate'; emoji = '⛈️';
+            } else {
+                level = 'High'; emoji = '⚡';
+            }
+            return { level, pct, emoji };
+        }
+
+        // ========== DOG WALK SCORE ==========
+        function getDogWalkScore(temp, rainChance, windKph, aqi) {
+            let score = 100;
+            const reasons = [];
+
+            if (temp > 28) { score -= 35; reasons.push('too hot for paws on pavement'); }
+            else if (temp > 25) { score -= 15; reasons.push('a bit warm'); }
+            else if (temp < 0) { score -= 35; reasons.push('freezing out'); }
+            else if (temp < 5) { score -= 15; reasons.push('quite cold'); }
+
+            if (rainChance > 70) { score -= 30; reasons.push('high chance of rain'); }
+            else if (rainChance > 40) { score -= 15; reasons.push('possible rain'); }
+
+            if (windKph > 40) { score -= 15; reasons.push('strong wind'); }
+
+            if (typeof aqi === 'number') {
+                if (aqi >= 4) { score -= 20; reasons.push('poor air quality'); }
+                else if (aqi === 3) { score -= 10; reasons.push('moderate air quality'); }
+            }
+
+            score = Math.max(0, Math.min(100, score));
+
+            let label, emoji;
+            if (score >= 80) { label = 'Great time for a walk'; emoji = '🐕✅'; }
+            else if (score >= 60) { label = 'Good, with minor caveats'; emoji = '🐕'; }
+            else if (score >= 35) { label = 'Okay, just be prepared'; emoji = '🐕⚠️'; }
+            else { label = "Better to skip it today"; emoji = '🐕🚫'; }
+
+            return { score, label, emoji, reasons };
+        }
+
+        // ========== COMPARE TO YESTERDAY ==========
+        // Uses localStorage to remember what a city's weather looked like the
+        // last time this page was opened, and compares it to today. Since the
+        // free API tier has no real historical data, this rolls forward day by
+        // day rather than pulling an actual "yesterday" record on first use.
+        function getLocalDateStr(tzOffsetSeconds) {
+            const localMs = (Math.floor(Date.now() / 1000) + tzOffsetSeconds) * 1000;
+            return new Date(localMs).toISOString().split('T')[0];
+        }
+
+        function updateYesterdayComparison(cityQuery, temp, condition, todayDateStr) {
+            const key = 'georgiaWeatherHistory:' + cityQuery;
+            let comparisonText = 'No data from yesterday yet — check back tomorrow.';
+
+            try {
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data.date !== todayDateStr) {
+                        const diff = Math.round(temp - data.temp);
+                        if (diff > 0) comparisonText = `🔺 ${diff}° warmer than yesterday (was ${Math.round(data.temp)}°, ${data.condition})`;
+                        else if (diff < 0) comparisonText = `🔻 ${Math.abs(diff)}° colder than yesterday (was ${Math.round(data.temp)}°, ${data.condition})`;
+                        else comparisonText = `➡️ Same temperature as yesterday (${data.condition})`;
+                    } else {
+                        // Already recorded today — keep showing the last comparison we made.
+                        return data.comparisonText || comparisonText;
+                    }
+                }
+                localStorage.setItem(key, JSON.stringify({ date: todayDateStr, temp, condition, comparisonText }));
+            } catch (e) {
+                comparisonText = 'Comparison unavailable in this browser.';
+            }
+
+            return comparisonText;
+        }
+
+        function displayWeather(current, forecast, displayName, cityQuery, aqiData) {
             currentCity = displayName || current.name;
             if (cityQuery) populateCitySwitcher(cityQuery);
             const tzOffset = current.timezone || 0;
             const dailyForecast = buildDailyForecast(forecast.list);
             const todayRainChance = dailyForecast.length ? dailyForecast[0].rainChance : 0;
             const windSpeedKph = (current.wind.speed || 0) * 3.6; // m/s -> km/h
+
+            const aqiValue = (aqiData && aqiData.list && aqiData.list[0]) ? aqiData.list[0].main.aqi : null;
+            const aqiInfo = Object.assign({ value: aqiValue }, aqiValue ? getAqiInfo(aqiValue) : { label: 'Unavailable', emoji: '⚪' });
+            const thunderRisk = getThunderRisk(forecast.list, current.weather[0].id);
 
             // Current weather
             document.getElementById('cityName').textContent = (displayName || current.name) + ', ' + (current.sys.country || '');
@@ -1445,6 +1575,16 @@
                     <div class="detail-value">${Math.round(windSpeedKph)} km/h</div>
                     <div class="detail-label">${windDesc}</div>
                 </div>
+                <div class="detail-card">
+                    <div class="detail-icon">${aqiInfo.emoji}</div>
+                    <div class="detail-value">${aqiInfo.label}</div>
+                    <div class="detail-label">Air Quality</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-icon">${thunderRisk.emoji}</div>
+                    <div class="detail-value">${thunderRisk.level}</div>
+                    <div class="detail-label">Thunderstorm Risk (${thunderRisk.pct}%)</div>
+                </div>
             `;
             document.getElementById('weatherDetails').innerHTML = detailsHTML;
 
@@ -1455,6 +1595,18 @@
                 document.getElementById('roastIcon').textContent = roastParts[1];
                 document.getElementById('roastText').textContent = roastParts[2];
             }
+
+            // Dog Walk Score
+            const dogWalk = getDogWalkScore(current.main.temp, todayRainChance, windSpeedKph, aqiInfo.value);
+            document.getElementById('dogWalkIcon').textContent = dogWalk.emoji;
+            document.getElementById('dogWalkText').textContent = dogWalk.reasons.length
+                ? `${dogWalk.label} (score ${dogWalk.score}/100) — watch out for: ${dogWalk.reasons.join(', ')}.`
+                : `${dogWalk.label} (score ${dogWalk.score}/100). Conditions look ideal.`;
+
+            // Compared to Yesterday
+            const todayDateStr = getLocalDateStr(tzOffset);
+            const comparisonText = updateYesterdayComparison(cityQuery || current.name, current.main.temp, current.weather[0].description, todayDateStr);
+            document.getElementById('yesterdayCompare').textContent = comparisonText;
 
             // Forecast
             document.getElementById('forecastTitle').textContent = `📅 ${dailyForecast.length}-Day Forecast`;
