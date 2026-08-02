@@ -662,7 +662,7 @@
             text-align: right;
         }
 
-        /* Forecasts - 30 Day */
+        /* Forecasts */
         .forecasts {
             display: grid;
             grid-template-columns: 1fr;
@@ -956,11 +956,13 @@
 
     <script>
         // ========== CONFIG ==========
-        // Free key: sign up at https://www.weatherapi.com/signup.aspx (instant, no card),
-        // then paste your key below. If errors still mention your key after that fix,
-        // your key is invalid/expired/over quota — the banner will now say exactly which.
-        const API_KEY = 'f5ec96c9efc94e1f7da114340242001';
-        
+        // This uses OpenWeather (openweathermap.org), matching the account/keys
+        // shown in your dashboard. Paste one of YOUR OpenWeather API keys below.
+        // Note: brand-new OpenWeather keys can take up to ~2 hours to activate
+        // after creation, so if you *just* made this key and still get an error,
+        // wait a bit and try again.
+        const API_KEY = '5663a8c00c74913951a1abd8c1c3c8f6';
+
         const GEORGIA_CITIES = [
             { name: 'Batumi', emoji: '🏖️' },
             { name: 'Gori', emoji: '🏛️' },
@@ -1084,7 +1086,7 @@
             if (description.includes('drizzle')) return weatherIcons.drizzle;
             if (description.includes('thunder') || description.includes('storm')) return weatherIcons.thunderstorm;
             if (description.includes('snow')) return weatherIcons.snow;
-            if (description.includes('mist') || description.includes('fog')) return weatherIcons.mist;
+            if (description.includes('mist') || description.includes('fog') || description.includes('haze')) return weatherIcons.mist;
             return weatherIcons.clouds;
         }
 
@@ -1180,32 +1182,47 @@
             }
         }
 
-        // ========== FETCH WEATHER ==========
-        // Free WeatherAPI.com keys only return a 3-day forecast. Asking for more
-        // (this file used to ask for 30) makes the ENTIRE request fail, for every
-        // city, with an error that was previously being swallowed and hidden from you.
-        // If you upgrade to a paid WeatherAPI plan, you can raise this (paid plans
-        // typically support up to 10-14 days).
-        const FORECAST_DAYS = 3;
+        function formatUnixTime(unixSeconds, tzOffsetSeconds) {
+            // OpenWeather gives sunrise/sunset as UTC unix timestamps plus a
+            // timezone offset (seconds) for the city itself.
+            const localMs = (unixSeconds + tzOffsetSeconds) * 1000;
+            const d = new Date(localMs);
+            let hours = d.getUTCHours();
+            const minutes = d.getUTCMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            if (hours === 0) hours = 12;
+            const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutesStr} ${ampm}`;
+        }
 
+        // ========== FETCH WEATHER (OpenWeather API) ==========
+        // Free-tier friendly: Current Weather + 5 day/3-hour Forecast.
+        // (OpenWeather's One Call 3.0 API needs a card on file even on the free
+        // tier, so we avoid it and build daily forecast cards ourselves from the
+        // 3-hourly data instead.)
         async function fetchWeather(cityName) {
             try {
                 console.log('Fetching weather for:', cityName);
-                const url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${encodeURIComponent(cityName)}&days=${FORECAST_DAYS}&aqi=yes`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)},GE&appid=${API_KEY}&units=metric`;
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityName)},GE&appid=${API_KEY}&units=metric`;
 
-                if (!response.ok) {
-                    // WeatherAPI still returns a JSON body on failure with the real reason
-                    // (bad/expired key, quota exceeded, unknown city, etc). Show that instead
-                    // of a generic message so it's actually possible to diagnose.
-                    const apiMessage = (data && data.error && data.error.message)
-                        ? data.error.message
-                        : `Request failed (HTTP ${response.status})`;
-                    throw new Error(apiMessage);
+                const [currentRes, forecastRes] = await Promise.all([
+                    fetch(currentUrl),
+                    fetch(forecastUrl),
+                ]);
+
+                const currentData = await currentRes.json();
+                const forecastData = await forecastRes.json();
+
+                if (!currentRes.ok) {
+                    throw new Error((currentData && currentData.message) ? currentData.message : `Request failed (HTTP ${currentRes.status})`);
+                }
+                if (!forecastRes.ok) {
+                    throw new Error((forecastData && forecastData.message) ? forecastData.message : `Forecast request failed (HTTP ${forecastRes.status})`);
                 }
 
-                displayWeather(data);
+                displayWeather(currentData, forecastData);
                 showWeatherScreen();
             } catch (error) {
                 console.error('Weather fetch error:', error);
@@ -1229,76 +1246,111 @@
             document.getElementById('cityErrorBanner').classList.remove('show');
         }
 
-        function displayWeather(data) {
-            const current = data.current;
-            const location = data.location;
-            const forecast = data.forecast.forecastday;
+        // Group OpenWeather's 3-hourly forecast list into daily buckets
+        // (min/max temp, worst rain chance, a representative condition).
+        function buildDailyForecast(list) {
+            const days = {};
+            list.forEach(entry => {
+                const dateKey = entry.dt_txt.split(' ')[0];
+                if (!days[dateKey]) {
+                    days[dateKey] = {
+                        date: dateKey,
+                        maxtemp_c: entry.main.temp_max,
+                        mintemp_c: entry.main.temp_min,
+                        rainChances: [],
+                        conditions: [],
+                    };
+                }
+                const day = days[dateKey];
+                day.maxtemp_c = Math.max(day.maxtemp_c, entry.main.temp_max);
+                day.mintemp_c = Math.min(day.mintemp_c, entry.main.temp_min);
+                day.rainChances.push(Math.round((entry.pop || 0) * 100));
+                day.conditions.push(entry.weather[0].main);
+            });
 
-            currentCity = location.name;
+            return Object.values(days).map(day => {
+                // Most frequent condition for that day
+                const counts = {};
+                day.conditions.forEach(c => counts[c] = (counts[c] || 0) + 1);
+                const mainCondition = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+                return {
+                    date: day.date,
+                    maxtemp_c: day.maxtemp_c,
+                    mintemp_c: day.mintemp_c,
+                    rainChance: Math.max(...day.rainChances),
+                    condition: mainCondition,
+                };
+            });
+        }
+
+        function displayWeather(current, forecast) {
+            currentCity = current.name;
+            const tzOffset = current.timezone || 0;
+            const dailyForecast = buildDailyForecast(forecast.list);
+            const todayRainChance = dailyForecast.length ? dailyForecast[0].rainChance : 0;
+            const windSpeedKph = (current.wind.speed || 0) * 3.6; // m/s -> km/h
 
             // Current weather
-            document.getElementById('cityName').textContent = location.name + ', ' + location.region;
-            document.getElementById('temperature').textContent = Math.round(current.temp_c) + '°';
-            document.getElementById('weatherDesc').textContent = current.condition.text;
-            document.getElementById('feelsLike').textContent = `Feels like ${Math.round(current.feelslike_c)}°`;
-            document.getElementById('weatherIcon').textContent = getWeatherIcon(current.condition.text);
+            document.getElementById('cityName').textContent = current.name + ', ' + (current.sys.country || '');
+            document.getElementById('temperature').textContent = Math.round(current.main.temp) + '°';
+            document.getElementById('weatherDesc').textContent = current.weather[0].description;
+            document.getElementById('feelsLike').textContent = `Feels like ${Math.round(current.main.feels_like)}°`;
+            document.getElementById('weatherIcon').textContent = getWeatherIcon(current.weather[0].main);
 
-            const rainChance = forecast[0].day.daily_chance_of_rain;
-            const windSpeed = current.wind_kph;
-            const rainDesc = getRainDescription(rainChance);
-            const windDesc = getWindDescription(windSpeed);
+            const rainDesc = getRainDescription(todayRainChance);
+            const windDesc = getWindDescription(windSpeedKph);
 
             // Avatar outfit
-            const avatarOutfit = getAvatarOutfit(current.temp_c, rainChance);
+            const avatarOutfit = getAvatarOutfit(current.main.temp, todayRainChance);
             document.getElementById('avatarOutfit').textContent = avatarOutfit;
 
+            const sunriseText = current.sys.sunrise ? formatUnixTime(current.sys.sunrise, tzOffset) : '-';
+            const sunsetText = current.sys.sunset ? formatUnixTime(current.sys.sunset, tzOffset) : '-';
+
             // Weather details with WIND prominently displayed
+            // (UV index isn't available on OpenWeather's free current-weather
+            // endpoint, so that card is omitted here.)
             const detailsHTML = `
                 <div class="detail-card">
                     <div class="detail-icon">💧</div>
-                    <div class="detail-value">${current.humidity}%</div>
+                    <div class="detail-value">${current.main.humidity}%</div>
                     <div class="detail-label">Humidity</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🌧️</div>
-                    <div class="detail-value">${rainChance}%</div>
+                    <div class="detail-value">${todayRainChance}%</div>
                     <div class="detail-label">Rain (${rainDesc})</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🔽</div>
-                    <div class="detail-value">${Math.round(current.pressure_mb)}</div>
+                    <div class="detail-value">${Math.round(current.main.pressure)}</div>
                     <div class="detail-label">Pressure (mb)</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">👁️</div>
-                    <div class="detail-value">${Math.round(current.vis_km)}</div>
+                    <div class="detail-value">${current.visibility ? Math.round(current.visibility / 1000) : '-'}</div>
                     <div class="detail-label">Visibility (km)</div>
                 </div>
                 <div class="detail-card">
-                    <div class="detail-icon">☀️</div>
-                    <div class="detail-value">${Math.round(current.uv)}</div>
-                    <div class="detail-label">UV Index</div>
-                </div>
-                <div class="detail-card">
                     <div class="detail-icon">🌅</div>
-                    <div class="detail-value" style="font-size: 16px;">${forecast[0].astro.sunrise}</div>
+                    <div class="detail-value" style="font-size: 16px;">${sunriseText}</div>
                     <div class="detail-label">Sunrise</div>
                 </div>
                 <div class="detail-card">
                     <div class="detail-icon">🌇</div>
-                    <div class="detail-value" style="font-size: 16px;">${forecast[0].astro.sunset}</div>
+                    <div class="detail-value" style="font-size: 16px;">${sunsetText}</div>
                     <div class="detail-label">Sunset</div>
                 </div>
                 <div class="detail-card wind-card">
                     <div class="detail-icon">💨</div>
-                    <div class="detail-value">${Math.round(windSpeed)} km/h</div>
+                    <div class="detail-value">${Math.round(windSpeedKph)} km/h</div>
                     <div class="detail-label">${windDesc}</div>
                 </div>
             `;
             document.getElementById('weatherDetails').innerHTML = detailsHTML;
 
             // Roast
-            const roast = getWeatherRoast(current.temp_c, current.condition.text, rainChance);
+            const roast = getWeatherRoast(current.main.temp, current.weather[0].main, todayRainChance);
             const roastParts = roast.match(/(\S+)\s"(.+)"/);
             if (roastParts) {
                 document.getElementById('roastIcon').textContent = roastParts[1];
@@ -1306,7 +1358,7 @@
             }
 
             // Outfit
-            const outfit = getOutfitRecommendation(current.temp_c, rainChance);
+            const outfit = getOutfitRecommendation(current.main.temp, todayRainChance);
             const outfitHTML = outfit.map(item => `<div class="outfit-item">${item}</div>`).join('');
             document.getElementById('outfitItems').innerHTML = outfitHTML;
 
@@ -1324,36 +1376,36 @@
             document.getElementById('chancesList').innerHTML = chancesHTML;
 
             // Forecast
-            document.getElementById('forecastTitle').textContent = `📅 ${forecast.length}-Day Forecast`;
-            const dailyHTML = forecast.map(day => {
-                const date = new Date(day.date);
+            document.getElementById('forecastTitle').textContent = `📅 ${dailyForecast.length}-Day Forecast`;
+            const dailyHTML = dailyForecast.map(day => {
+                const date = new Date(day.date + 'T00:00:00');
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
                 const dayDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 return `
                     <div class="daily-item">
                         <div class="daily-day">${dayName}<br>${dayDate}</div>
-                        <div class="daily-icon">${getWeatherIcon(day.day.condition.text)}</div>
+                        <div class="daily-icon">${getWeatherIcon(day.condition)}</div>
                         <div>
-                            <div class="daily-high">${Math.round(day.day.maxtemp_c)}°</div>
-                            <div class="daily-low">${Math.round(day.day.mintemp_c)}°</div>
+                            <div class="daily-high">${Math.round(day.maxtemp_c)}°</div>
+                            <div class="daily-low">${Math.round(day.mintemp_c)}°</div>
                         </div>
-                        <div class="daily-rain">🌧️${day.day.daily_chance_of_rain}%</div>
+                        <div class="daily-rain">🌧️${day.rainChance}%</div>
                     </div>
                 `;
             }).join('');
             document.getElementById('dailyForecast').innerHTML = dailyHTML;
 
             // Update background
-            updateBackgroundTheme(current.condition.text, current.temp_c);
+            updateBackgroundTheme(current.weather[0].main, current.main.temp);
 
             // Animations
-            if (rainChance > 50) {
+            if (todayRainChance > 50) {
                 createRainAnimation();
             } else {
                 document.getElementById('rainContainer').style.opacity = '0';
             }
 
-            if (current.temp_c < 0) {
+            if (current.main.temp < 0) {
                 createSnowAnimation();
             } else {
                 document.getElementById('snowContainer').innerHTML = '';
