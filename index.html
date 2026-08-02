@@ -356,6 +356,38 @@
             transform: translateX(-5px);
         }
 
+        .city-switcher-select {
+            flex: 1 1 260px;
+            min-width: 220px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            color: #ffffff;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'><path d='M5 7l5 6 5-6H5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+            background-size: 14px;
+        }
+
+        .city-switcher-select:hover,
+        .city-switcher-select:focus {
+            background-color: rgba(15, 23, 42, 0.9);
+            border-color: rgba(255, 255, 255, 0.5);
+            outline: none;
+        }
+
+        .city-switcher-select option {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
         /* Current Weather */
         .current-weather {
             backdrop-filter: blur(20px);
@@ -904,8 +936,8 @@
     <div class="weather-screen" id="weatherScreen">
         <div class="container">
             <div style="display:flex; align-items:center; justify-content:space-between; gap: 15px; flex-wrap: wrap; margin-bottom: 30px;">
-                <button class="back-button" style="margin-bottom:0;" onclick="goBackToCities()">← Back to Cities</button>
-                <select id="citySwitcher" class="city-search-box" style="width:auto; margin-bottom:0; padding: 12px 20px;" onchange="onCitySwitcherChange(this.value)"></select>
+                <button class="back-button" style="margin-bottom:0; flex-shrink:0;" onclick="goBackToCities()">← Back to Cities</button>
+                <select id="citySwitcher" class="city-switcher-select" onchange="onCitySwitcherChange(this.value)"></select>
             </div>
 
             <!-- Current Weather -->
