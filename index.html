@@ -903,7 +903,10 @@
     <!-- ========== WEATHER DETAIL SCREEN ========== -->
     <div class="weather-screen" id="weatherScreen">
         <div class="container">
-            <button class="back-button" onclick="goBackToCities()">← Back to Cities</button>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap: 15px; flex-wrap: wrap; margin-bottom: 30px;">
+                <button class="back-button" style="margin-bottom:0;" onclick="goBackToCities()">← Back to Cities</button>
+                <select id="citySwitcher" class="city-search-box" style="width:auto; margin-bottom:0; padding: 12px 20px;" onchange="onCitySwitcherChange(this.value)"></select>
+            </div>
 
             <!-- Current Weather -->
             <div class="current-weather" id="currentWeather">
@@ -961,20 +964,78 @@
         // Note: brand-new OpenWeather keys can take up to ~2 hours to activate
         // after creation, so if you *just* made this key and still get an error,
         // wait a bit and try again.
-        const API_KEY = 'dd911e1f660711182034f02b339493ed';
+        const API_KEY = '5663a8c00c74913951a1abd8c1c3c8f6';
 
+        // "query" is what's sent to OpenWeather (English/transliterated name + country code).
+        // "name" is the Georgian display name shown in the UI.
+        // Small villages/landmarks (David Gareja, Omalo, Shatili, Ushguli, Tsqneti, Sioni)
+        // may not always resolve via OpenWeather's city-name geocoding — if one shows an
+        // error, that's OpenWeather not recognizing the name, not a bug in this file.
         const GEORGIA_CITIES = [
-            { name: 'Batumi', emoji: '🏖️' },
-            { name: 'Gori', emoji: '🏛️' },
-            { name: 'Kutaisi', emoji: '🌉' },
-            { name: 'Senaki', emoji: '🌾' },
-            { name: 'Sukhumi', emoji: '🏝️' },
-            { name: 'Tbilisi', emoji: '🏙️' },
-            { name: 'Telavi', emoji: '🍇' },
-            { name: 'Tskaltubo', emoji: '💆' },
-            { name: 'Zugdidi', emoji: '⛰️' },
-            { name: 'Zestaponi', emoji: '⚙️' },
-        ].sort((a, b) => a.name.localeCompare(b.name));
+            { query: 'Abastumani,GE', name: 'აბასთუმანი', emoji: '♨️' },
+            { query: 'Akhaltsikhe,GE', name: 'ახალციხე', emoji: '🏰' },
+            { query: 'Batumi,GE', name: 'ბათუმი', emoji: '🏖️' },
+            { query: 'Bakuriani,GE', name: 'ბაკურიანი', emoji: '⛷️' },
+            { query: 'Bolnisi,GE', name: 'ბოლნისი', emoji: '🌾' },
+            { query: 'Borjomi,GE', name: 'ბორჯომი', emoji: '💧' },
+            { query: 'Gonio,GE', name: 'გონიო', emoji: '🏖️' },
+            { query: 'Gori,GE', name: 'გორი', emoji: '🏛️' },
+            { query: 'Gudauri,GE', name: 'გუდაური', emoji: '🏔️' },
+            { query: 'Gurjaani,GE', name: 'გურჯაანი', emoji: '🍇' },
+            { query: 'David Gareja,GE', name: 'დავით-გარეჯი', emoji: '⛪' },
+            { query: 'Zestaponi,GE', name: 'ზესტაფონი', emoji: '⚙️' },
+            { query: 'Zugdidi,GE', name: 'ზუგდიდი', emoji: '⛰️' },
+            { query: 'Tbilisi,GE', name: 'თბილისი', emoji: '🏙️' },
+            { query: 'Telavi,GE', name: 'თელავი', emoji: '🍇' },
+            { query: 'Tianeti,GE', name: 'თიანეთი', emoji: '🌲' },
+            { query: 'Lagodekhi,GE', name: 'ლაგოდეხი', emoji: '🌲' },
+            { query: 'Lanchkhuti,GE', name: 'ლანჩხუთი', emoji: '🌾' },
+            { query: 'Manglisi,GE', name: 'მანგლისი', emoji: '🌲' },
+            { query: 'Marneuli,GE', name: 'მარნეული', emoji: '🌾' },
+            { query: 'Mestia,GE', name: 'მესტია', emoji: '🏔️' },
+            { query: 'Mtskheta,GE', name: 'მცხეთა', emoji: '⛪' },
+            { query: 'Ozurgeti,GE', name: 'ოზურგეთი', emoji: '🌿' },
+            { query: 'Omalo,GE', name: 'ომალო', emoji: '🏔️' },
+            { query: 'Oni,GE', name: 'ონი', emoji: '🏔️' },
+            { query: 'Rustavi,GE', name: 'რუსთავი', emoji: '🏭' },
+            { query: 'Sagarejo,GE', name: 'საგარეჯო', emoji: '🌾' },
+            { query: 'Samtredia,GE', name: 'სამტრედია', emoji: '🌾' },
+            { query: 'Sachkhere,GE', name: 'საჩხერე', emoji: '⛰️' },
+            { query: 'Senaki,GE', name: 'სენაკი', emoji: '🌾' },
+            { query: 'Sioni,GE', name: 'სიონი', emoji: '💧' },
+            { query: 'Sighnaghi,GE', name: 'სიღნაღი', emoji: '🍇' },
+            { query: 'Sokhumi,GE', name: 'სოხუმი', emoji: '🏝️' },
+            { query: 'Surami,GE', name: 'სურამი', emoji: '⛰️' },
+            { query: 'Ureki,GE', name: 'ურეკი', emoji: '🏖️' },
+            { query: 'Ushguli,GE', name: 'უშგული', emoji: '🏔️' },
+            { query: 'Poti,GE', name: 'ფოთი', emoji: '⚓' },
+            { query: 'Kobuleti,GE', name: 'ქობულეთი', emoji: '🏖️' },
+            { query: 'Kutaisi,GE', name: 'ქუთაისი', emoji: '🌉' },
+            { query: 'Shatili,GE', name: 'შატილი', emoji: '🏔️' },
+            { query: 'Shekvetili,GE', name: 'შეკვეთილი', emoji: '🏖️' },
+            { query: 'Shovi,GE', name: 'შოვი', emoji: '🏔️' },
+            { query: 'Chokhatauri,GE', name: 'ჩოხატაური', emoji: '🌿' },
+            { query: 'Tskhinvali,GE', name: 'ცხინვალი', emoji: '🏛️' },
+            { query: 'Tsinandali,GE', name: 'წინანდალი', emoji: '🍇' },
+            { query: 'Tsqneti,GE', name: 'წყნეთი', emoji: '🌲' },
+            { query: 'Chiatura,GE', name: 'ჭიათურა', emoji: '⚙️' },
+            { query: 'Kharagauli,GE', name: 'ხარაგაული', emoji: '🌲' },
+            { query: 'Khashuri,GE', name: 'ხაშური', emoji: '🏛️' },
+            { query: 'Khobi,GE', name: 'ხობი', emoji: '🌾' },
+            // International cities
+            { query: 'Athens,GR', name: 'ათენი', emoji: '🏛️' },
+            { query: 'Antalya,TR', name: 'ანტალია', emoji: '🏖️' },
+            { query: 'Baku,AZ', name: 'ბაქო', emoji: '🔥' },
+            { query: 'Budapest,HU', name: 'ბუდაპეშტი', emoji: '🏰' },
+            { query: 'Vienna,AT', name: 'ვენა', emoji: '🎻' },
+            { query: 'Tel Aviv,IL', name: 'თელ-ავივი', emoji: '🏖️' },
+            { query: 'London,GB', name: 'ლონდონი', emoji: '🎡' },
+            { query: 'New York,US', name: 'ნიუ-იორკი', emoji: '🗽' },
+            { query: 'Paris,FR', name: 'პარიზი', emoji: '🗼' },
+            { query: 'Prague,CZ', name: 'პრაღა', emoji: '🏰' },
+            { query: 'Istanbul,TR', name: 'სტამბული', emoji: '🕌' },
+            { query: 'Zurich,CH', name: 'ციურიხი', emoji: '🏔️' },
+        ];
 
         let currentCity = null;
 
@@ -1201,11 +1262,11 @@
         // (OpenWeather's One Call 3.0 API needs a card on file even on the free
         // tier, so we avoid it and build daily forecast cards ourselves from the
         // 3-hourly data instead.)
-        async function fetchWeather(cityName) {
+        async function fetchWeather(cityQuery, displayName) {
             try {
-                console.log('Fetching weather for:', cityName);
-                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)},GE&appid=${API_KEY}&units=metric`;
-                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityName)},GE&appid=${API_KEY}&units=metric`;
+                console.log('Fetching weather for:', cityQuery);
+                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric`;
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric`;
 
                 const [currentRes, forecastRes] = await Promise.all([
                     fetch(currentUrl),
@@ -1222,11 +1283,11 @@
                     throw new Error((forecastData && forecastData.message) ? forecastData.message : `Forecast request failed (HTTP ${forecastRes.status})`);
                 }
 
-                displayWeather(currentData, forecastData);
+                displayWeather(currentData, forecastData, displayName, cityQuery);
                 showWeatherScreen();
             } catch (error) {
                 console.error('Weather fetch error:', error);
-                showCityError(cityName, error.message || 'Unknown error');
+                showCityError(displayName || cityQuery, error.message || 'Unknown error');
             }
         }
 
@@ -1283,15 +1344,16 @@
             });
         }
 
-        function displayWeather(current, forecast) {
-            currentCity = current.name;
+        function displayWeather(current, forecast, displayName, cityQuery) {
+            currentCity = displayName || current.name;
+            if (cityQuery) populateCitySwitcher(cityQuery);
             const tzOffset = current.timezone || 0;
             const dailyForecast = buildDailyForecast(forecast.list);
             const todayRainChance = dailyForecast.length ? dailyForecast[0].rainChance : 0;
             const windSpeedKph = (current.wind.speed || 0) * 3.6; // m/s -> km/h
 
             // Current weather
-            document.getElementById('cityName').textContent = current.name + ', ' + (current.sys.country || '');
+            document.getElementById('cityName').textContent = (displayName || current.name) + ', ' + (current.sys.country || '');
             document.getElementById('temperature').textContent = Math.round(current.main.temp) + '°';
             document.getElementById('weatherDesc').textContent = current.weather[0].description;
             document.getElementById('feelsLike').textContent = `Feels like ${Math.round(current.main.feels_like)}°`;
@@ -1423,6 +1485,19 @@
             document.getElementById('citySelection').classList.remove('hidden');
         }
 
+        function onCitySwitcherChange(query) {
+            if (!query) return;
+            const city = GEORGIA_CITIES.find(c => c.query === query);
+            fetchWeather(query, city ? city.name : query);
+        }
+
+        function populateCitySwitcher(selectedQuery) {
+            const switcher = document.getElementById('citySwitcher');
+            switcher.innerHTML = GEORGIA_CITIES.map(city =>
+                `<option value="${city.query}" ${city.query === selectedQuery ? 'selected' : ''}>${city.emoji} ${city.name}</option>`
+            ).join('');
+        }
+
         // ========== CITY SELECTION INIT ==========
         function initializeCities() {
             const grid = document.getElementById('citiesGrid');
@@ -1430,7 +1505,7 @@
 
             function renderCities(cities) {
                 grid.innerHTML = cities.map(city => `
-                    <div class="city-card" onclick="fetchWeather('${city.name}')">
+                    <div class="city-card" onclick="fetchWeather('${city.query}', '${city.name}')">
                         <div class="city-card-emoji">${city.emoji}</div>
                         <div class="city-card-name">${city.name}</div>
                     </div>
@@ -1438,15 +1513,22 @@
             }
 
             renderCities(GEORGIA_CITIES);
+            populateCitySwitcher();
 
-            // Search functionality
+            // Search functionality (matches Georgian display name or the English query name)
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
                 const filtered = GEORGIA_CITIES.filter(city => 
-                    city.name.toLowerCase().includes(term)
+                    city.name.toLowerCase().includes(term) || city.query.toLowerCase().includes(term)
                 );
                 renderCities(filtered);
             });
+
+            // Default to Tbilisi on first load
+            const tbilisi = GEORGIA_CITIES.find(c => c.query === 'Tbilisi,GE');
+            if (tbilisi) {
+                fetchWeather(tbilisi.query, tbilisi.name);
+            }
         }
 
         // Initialize on load
