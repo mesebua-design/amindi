@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Georgia Weather</title>
+    <title>საქართველოს ამინდი</title>
     <style>
         * {
             margin: 0;
@@ -940,8 +940,8 @@
         <div class="city-selection-container">
             <div class="city-selection-header">
                 <div class="city-selection-logo">🌤️</div>
-                <div class="city-selection-title">Georgia Weather</div>
-                <div class="city-selection-subtitle">Choose a city to see the weather forecast</div>
+                <div class="city-selection-title">საქართველოს ამინდი</div>
+                <div class="city-selection-subtitle">აირჩიეთ ქალაქი ამინდის სანახავად</div>
             </div>
 
             <div class="city-error-banner" id="cityErrorBanner">
@@ -953,7 +953,7 @@
                 type="text" 
                 id="citySearchInput" 
                 class="city-search-box" 
-                placeholder="Search city..."
+                placeholder="ქალაქის ძებნა..."
             >
 
             <div class="cities-grid" id="citiesGrid"></div>
@@ -964,7 +964,7 @@
     <div class="weather-screen" id="weatherScreen">
         <div class="container">
             <div style="display:flex; align-items:center; justify-content:space-between; gap: 15px; flex-wrap: wrap; margin-bottom: 30px;">
-                <button class="back-button" style="margin-bottom:0; flex-shrink:0;" onclick="goBackToCities()">← Back to Cities</button>
+                <button class="back-button" style="margin-bottom:0; flex-shrink:0;" onclick="goBackToCities()">← უკან ქალაქებზე</button>
                 <select id="citySwitcher" class="city-switcher-select" onchange="onCitySwitcherChange(this.value)"></select>
             </div>
 
@@ -972,7 +972,7 @@
             <div class="current-weather" id="currentWeather">
                 <div class="weather-icon" id="weatherIcon">⛅</div>
                 <div class="weather-main">
-                    <div class="city-name" id="cityName">Loading...</div>
+                    <div class="city-name" id="cityName">იტვირთება...</div>
                     <div class="temperature" id="temperature">-</div>
                     <div class="weather-desc" id="weatherDesc">-</div>
                     <div class="feels-like" id="feelsLike">-</div>
@@ -983,7 +983,7 @@
                         <div class="avatar-head">👤</div>
                         <div class="avatar-outfit" id="avatarOutfit">👕🩳</div>
                     </div>
-                    <div class="avatar-label" id="avatarLabel">Your Outfit Today</div>
+                    <div class="avatar-label" id="avatarLabel">დღევანდელი ჩაცმულობა</div>
                 </div>
             </div>
 
@@ -993,13 +993,13 @@
             <!-- Roast -->
             <div class="roast-section" id="roastSection">
                 <div class="roast-icon" id="roastIcon">😂</div>
-                <div class="roast-text" id="roastText">Loading weather roast...</div>
+                <div class="roast-text" id="roastText">იტვირთება...</div>
             </div>
 
             <!-- Dog Walk Score -->
             <div class="roast-section" id="dogWalkSection">
                 <div class="roast-icon" id="dogWalkIcon">🐕</div>
-                <div class="roast-text" id="dogWalkText">Loading dog walk score...</div>
+                <div class="roast-text" id="dogWalkText">იტვირთება...</div>
             </div>
 
             <!-- Forecast -->
@@ -1113,46 +1113,46 @@
         // ========== ROASTS ==========
         const roasts = {
             hot: [
-                '🔥 "The sun woke up ANGRY today."',
-                '🔥 "You\'re one step away from becoming barbecue."',
-                '🔥 "Standing outside is now a cardio workout."',
-                '🔥 "Even your shower has trust issues with you right now."',
-                '🔥 "The pavement is basically lava at this point."',
+                '🔥 "მზემ დღეს გაბრაზებული გაიღვიძა."',
+                '🔥 "ერთი ნაბიჯით ხარ დარჩენილი შაშხლამდე."',
+                '🔥 "გარეთ დგომა უკვე კარდიო ვარჯიშია."',
+                '🔥 "შენს შხაპსაც კი აღარ სჯერა შენი."',
+                '🔥 "ტროტუარი უკვე ლავას გავს."',
             ],
             cold: [
-                '🥶 "Your blanket misses you already."',
-                '🥶 "Penguins are judging your fashion choices."',
-                '🥶 "Your car engine has trust issues."',
-                '🥶 "Feeling is overrated anyway."',
-                '🥶 "Winter is coming... oh wait, it\'s already here."',
+                '🥶 "შენს საბანს უკვე მოენატრე."',
+                '🥶 "პინგვინები აკრიტიკებენ შენს ჩაცმულობას."',
+                '🥶 "მანქანის ძრავი შენს ნდობას აღარ იმსახურებს."',
+                '🥶 "შეგრძნებები ხომ ისედაც ზედმეტია."',
+                '🥶 "ზამთარი მოდის... აჰ, უკვე მოვიდა."',
             ],
             rainy: [
-                '🌧️ "Umbrellas are strongly recommended. Pride is optional."',
-                '🌧️ "Your car is basically a submarine now."',
-                '🌧️ "The weather called your shoes ugly."',
-                '🌧️ "Waterproof everything."',
-                '🌧️ "Noah is checking his texts."',
+                '🌧️ "ქოლგა კატეგორიულად რეკომენდებულია. სიამაყე — არასავალდებულო."',
+                '🌧️ "შენი მანქანა უკვე წყალქვეშა ნავს ჰგავს."',
+                '🌧️ "ამინდმა შენი ფეხსაცმელი გააკრიტიკა."',
+                '🌧️ "ყველაფერი წყალგაუმტარი უნდა იყოს."',
+                '🌧️ "ნოე შენს შეტყობინებებს ამოწმებს."',
             ],
             cloudy: [
-                '☁️ "Nature forgot to finish rendering today\'s sky."',
-                '☁️ "Even the sun is lazy today."',
-                '☁️ "Depression: The Weather Edition."',
-                '☁️ "The sky is broken. We\'ve submitted a bug report."',
-                '☁️ "Vitamin D? Never heard of her."',
+                '☁️ "ბუნებამ დღევანდელი ცა ბოლომდე ვერ დახატა."',
+                '☁️ "მზეც კი ზარმაცობს დღეს."',
+                '☁️ "დეპრესია: ამინდის ვერსია."',
+                '☁️ "ცა გატეხილია. შეცდომის შესახებ უკვე შევატყობინეთ."',
+                '☁️ "D ვიტამინი? არასდროს გამიგია."',
             ],
             snow: [
-                '❄️ "Time to walk like a penguin."',
-                '❄️ "Your car is mad at you."',
-                '❄️ "Frostbite speedrun any%?"',
-                '❄️ "Winter wonderland or frozen nightmare? Yes."',
-                '❄️ "Salt is your new best friend."',
+                '❄️ "დროა პინგვინივით ივლი."',
+                '❄️ "მანქანა შენზე გაბრაზებულია."',
+                '❄️ "მოყინვის სისწრაფის რეკორდზე ვართ?"',
+                '❄️ "ზამთრის სამოთხე თუ გაყინული კოშმარი? ორივე."',
+                '❄️ "მარილი — შენი ახალი საუკეთესო მეგობარი."',
             ],
             wind: [
-                '💨 "Great day to lose your umbrella."',
-                '💨 "Your hair is having a creative moment."',
-                '💨 "Dorothy definitely called."',
-                '💨 "Standing still is now a challenge."',
-                '💨 "The wind said: No."',
+                '💨 "შესანიშნავი დღეა ქოლგის დასაკარგად."',
+                '💨 "შენი თმა კრეატიულ განწყობაშია."',
+                '💨 "დოროთი დარეკვას აპირებდა."',
+                '💨 "ადგილზე დგომაც კი გამოწვევად იქცა."',
+                '💨 "ქარმა თქვა: არა."',
             ],
         };
 
@@ -1250,20 +1250,20 @@
         }
 
         function getWindDescription(speed) {
-            if (speed < 6) return '🍃 Calm';
-            if (speed < 16) return '🌿 Light Breeze';
-            if (speed < 31) return '💨 Moderate Breeze';
-            if (speed < 51) return '🌬️ Strong Wind';
-            if (speed < 76) return '🌪️ Very Strong';
-            return '⚠️ Dangerous';
+            if (speed < 6) return '🍃 მშვიდი';
+            if (speed < 16) return '🌿 სუსტი ნიავი';
+            if (speed < 31) return '💨 ზომიერი ნიავი';
+            if (speed < 51) return '🌬️ ძლიერი ქარი';
+            if (speed < 76) return '🌪️ ძალიან ძლიერი';
+            return '⚠️ საშიში';
         }
 
         function getRainDescription(chance) {
-            if (chance < 21) return 'Very Low';
-            if (chance < 41) return 'Low';
-            if (chance < 61) return 'Moderate';
-            if (chance < 81) return 'High';
-            return 'Very High';
+            if (chance < 21) return 'ძალიან დაბალი';
+            if (chance < 41) return 'დაბალი';
+            if (chance < 61) return 'ზომიერი';
+            if (chance < 81) return 'მაღალი';
+            return 'ძალიან მაღალი';
         }
 
         function updateBackgroundTheme(condition, temp) {
@@ -1325,7 +1325,7 @@
         async function fetchWeather(cityQuery, displayName) {
             try {
                 console.log('Fetching weather for:', cityQuery);
-                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric`;
+                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityQuery)}&appid=${API_KEY}&units=metric&lang=ka`;
 
                 const currentRes = await fetch(currentUrl);
                 const currentData = await currentRes.json();
@@ -1336,7 +1336,7 @@
                 // Use the coordinates OpenWeather resolved for this city so the
                 // forecast and air-quality calls line up exactly with "current".
                 const { lat, lon } = currentData.coord;
-                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=ka`;
                 const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
 
                 const [forecastRes, aqiRes] = await Promise.all([
@@ -1419,13 +1419,13 @@
         // ========== AIR QUALITY ==========
         function getAqiInfo(aqi) {
             const map = {
-                1: { label: 'Good', emoji: '🟢' },
-                2: { label: 'Fair', emoji: '🟡' },
-                3: { label: 'Moderate', emoji: '🟠' },
-                4: { label: 'Poor', emoji: '🔴' },
-                5: { label: 'Very Poor', emoji: '🟣' },
+                1: { label: 'კარგი', emoji: '🟢' },
+                2: { label: 'დამაკმაყოფილებელი', emoji: '🟡' },
+                3: { label: 'ზომიერი', emoji: '🟠' },
+                4: { label: 'ცუდი', emoji: '🔴' },
+                5: { label: 'ძალიან ცუდი', emoji: '🟣' },
             };
-            return map[aqi] || { label: 'Unknown', emoji: '⚪' };
+            return map[aqi] || { label: 'უცნობია', emoji: '⚪' };
         }
 
         // ========== THUNDERSTORM RISK ==========
@@ -1447,11 +1447,11 @@
             const pct = Math.round(maxPop * 100);
             let level, emoji;
             if (!hasThunderCode || pct < 20) {
-                level = 'Low'; emoji = '🌤️';
+                level = 'დაბალი'; emoji = '🌤️';
             } else if (pct < 50) {
-                level = 'Moderate'; emoji = '⛈️';
+                level = 'ზომიერი'; emoji = '⛈️';
             } else {
-                level = 'High'; emoji = '⚡';
+                level = 'მაღალი'; emoji = '⚡';
             }
             return { level, pct, emoji };
         }
@@ -1461,28 +1461,28 @@
             let score = 100;
             const reasons = [];
 
-            if (temp > 28) { score -= 35; reasons.push('too hot for paws on pavement'); }
-            else if (temp > 25) { score -= 15; reasons.push('a bit warm'); }
-            else if (temp < 0) { score -= 35; reasons.push('freezing out'); }
-            else if (temp < 5) { score -= 15; reasons.push('quite cold'); }
+            if (temp > 28) { score -= 35; reasons.push('ძალიან ცხელა თათებისთვის'); }
+            else if (temp > 25) { score -= 15; reasons.push('ცოტა ცხელა'); }
+            else if (temp < 0) { score -= 35; reasons.push('ყინვაა'); }
+            else if (temp < 5) { score -= 15; reasons.push('საკმაოდ ცივა'); }
 
-            if (rainChance > 70) { score -= 30; reasons.push('high chance of rain'); }
-            else if (rainChance > 40) { score -= 15; reasons.push('possible rain'); }
+            if (rainChance > 70) { score -= 30; reasons.push('წვიმის მაღალი ალბათობა'); }
+            else if (rainChance > 40) { score -= 15; reasons.push('შესაძლო წვიმა'); }
 
-            if (windKph > 40) { score -= 15; reasons.push('strong wind'); }
+            if (windKph > 40) { score -= 15; reasons.push('ძლიერი ქარი'); }
 
             if (typeof aqi === 'number') {
-                if (aqi >= 4) { score -= 20; reasons.push('poor air quality'); }
-                else if (aqi === 3) { score -= 10; reasons.push('moderate air quality'); }
+                if (aqi >= 4) { score -= 20; reasons.push('ჰაერის ცუდი ხარისხი'); }
+                else if (aqi === 3) { score -= 10; reasons.push('ჰაერის ზომიერი ხარისხი'); }
             }
 
             score = Math.max(0, Math.min(100, score));
 
             let label, emoji;
-            if (score >= 80) { label = 'Great time for a walk'; emoji = '🐕✅'; }
-            else if (score >= 60) { label = 'Good, with minor caveats'; emoji = '🐕'; }
-            else if (score >= 35) { label = 'Okay, just be prepared'; emoji = '🐕⚠️'; }
-            else { label = "Better to skip it today"; emoji = '🐕🚫'; }
+            if (score >= 80) { label = 'შესანიშნავი დროა სასეირნოდ'; emoji = '🐕✅'; }
+            else if (score >= 60) { label = 'კარგია, მცირე გაფრთხილებით'; emoji = '🐕'; }
+            else if (score >= 35) { label = 'დასაშვებია, მაგრამ მოემზადეთ'; emoji = '🐕⚠️'; }
+            else { label = 'სჯობს დღეს გამოტოვოთ'; emoji = '🐕🚫'; }
 
             return { score, label, emoji, reasons };
         }
