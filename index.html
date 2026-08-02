@@ -269,6 +269,18 @@
             gap: 15px;
         }
 
+        .city-group-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 30px 0 15px;
+            opacity: 0.9;
+            letter-spacing: 0.3px;
+        }
+
+        .city-group-title:first-child {
+            margin-top: 0;
+        }
+
         .city-card {
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.08);
@@ -967,18 +979,6 @@
                 <div class="roast-text" id="roastText">Loading weather roast...</div>
             </div>
 
-            <!-- Recommendations -->
-            <div class="recommendations">
-                <div class="recommendation-card">
-                    <h3>👕 Today's Outfit</h3>
-                    <div class="outfit-items" id="outfitItems"></div>
-                </div>
-                <div class="recommendation-card">
-                    <h3>📊 Funny Chances</h3>
-                    <div class="chances-list" id="chancesList"></div>
-                </div>
-            </div>
-
             <!-- Forecast -->
             <div class="forecasts">
                 <div class="forecast-card">
@@ -1054,7 +1054,9 @@
             { query: 'Kharagauli,GE', name: 'ხარაგაული', emoji: '🌲' },
             { query: 'Khashuri,GE', name: 'ხაშური', emoji: '🏛️' },
             { query: 'Khobi,GE', name: 'ხობი', emoji: '🌾' },
-            // International cities
+        ];
+
+        const INTERNATIONAL_CITIES = [
             { query: 'Athens,GR', name: 'ათენი', emoji: '🏛️' },
             { query: 'Antalya,TR', name: 'ანტალია', emoji: '🏖️' },
             { query: 'Baku,AZ', name: 'ბაქო', emoji: '🔥' },
@@ -1068,6 +1070,9 @@
             { query: 'Istanbul,TR', name: 'სტამბული', emoji: '🕌' },
             { query: 'Zurich,CH', name: 'ციურიხი', emoji: '🏔️' },
         ];
+
+        // Combined list — used for lookups (e.g. "find city by query") and the dropdown
+        const ALL_CITIES = [...GEORGIA_CITIES, ...INTERNATIONAL_CITIES];
 
         let currentCity = null;
 
@@ -1451,24 +1456,6 @@
                 document.getElementById('roastText').textContent = roastParts[2];
             }
 
-            // Outfit
-            const outfit = getOutfitRecommendation(current.main.temp, todayRainChance);
-            const outfitHTML = outfit.map(item => `<div class="outfit-item">${item}</div>`).join('');
-            document.getElementById('outfitItems').innerHTML = outfitHTML;
-
-            // Chances
-            const chances = [...chanceItems].sort(() => Math.random() - 0.5).slice(0, 5);
-            const chancesHTML = chances.map(item => `
-                <div class="chance-item">
-                    <div class="chance-label">${item.emoji} ${item.text}</div>
-                    <div class="chance-bar">
-                        <div class="chance-fill" style="width: ${getRandomInt(10, 95)}%"></div>
-                    </div>
-                    <div class="chance-percent">${getRandomInt(10, 99)}%</div>
-                </div>
-            `).join('');
-            document.getElementById('chancesList').innerHTML = chancesHTML;
-
             // Forecast
             document.getElementById('forecastTitle').textContent = `📅 ${dailyForecast.length}-Day Forecast`;
             const dailyHTML = dailyForecast.map(day => {
@@ -1519,15 +1506,23 @@
 
         function onCitySwitcherChange(query) {
             if (!query) return;
-            const city = GEORGIA_CITIES.find(c => c.query === query);
+            const city = ALL_CITIES.find(c => c.query === query);
             fetchWeather(query, city ? city.name : query);
         }
 
         function populateCitySwitcher(selectedQuery) {
             const switcher = document.getElementById('citySwitcher');
-            switcher.innerHTML = GEORGIA_CITIES.map(city =>
-                `<option value="${city.query}" ${city.query === selectedQuery ? 'selected' : ''}>${city.emoji} ${city.name}</option>`
-            ).join('');
+            switcher.innerHTML =
+                '<optgroup label="🇬🇪 ქართული ქალაქები">' +
+                GEORGIA_CITIES.map(city =>
+                    `<option value="${city.query}" ${city.query === selectedQuery ? 'selected' : ''}>${city.emoji} ${city.name}</option>`
+                ).join('') +
+                '</optgroup>' +
+                '<optgroup label="🌍 უცხოეთის ქალაქები">' +
+                INTERNATIONAL_CITIES.map(city =>
+                    `<option value="${city.query}" ${city.query === selectedQuery ? 'selected' : ''}>${city.emoji} ${city.name}</option>`
+                ).join('') +
+                '</optgroup>';
         }
 
         // ========== CITY SELECTION INIT ==========
@@ -1535,25 +1530,35 @@
             const grid = document.getElementById('citiesGrid');
             const searchInput = document.getElementById('citySearchInput');
 
-            function renderCities(cities) {
-                grid.innerHTML = cities.map(city => `
-                    <div class="city-card" onclick="fetchWeather('${city.query}', '${city.name}')">
-                        <div class="city-card-emoji">${city.emoji}</div>
-                        <div class="city-card-name">${city.name}</div>
+            function renderCityGroup(title, cities) {
+                if (!cities.length) return '';
+                return `
+                    <div class="city-group-title">${title}</div>
+                    <div class="cities-grid">
+                        ${cities.map(city => `
+                            <div class="city-card" onclick="fetchWeather('${city.query}', '${city.name}')">
+                                <div class="city-card-emoji">${city.emoji}</div>
+                                <div class="city-card-name">${city.name}</div>
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('');
+                `;
             }
 
-            renderCities(GEORGIA_CITIES);
+            function renderCities(georgianList, internationalList) {
+                grid.innerHTML =
+                    renderCityGroup('🇬🇪 ქართველოს ქალაქები', georgianList) +
+                    renderCityGroup('🌍 უცხოეთის ქალაქები', internationalList);
+            }
+
+            renderCities(GEORGIA_CITIES, INTERNATIONAL_CITIES);
             populateCitySwitcher();
 
             // Search functionality (matches Georgian display name or the English query name)
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                const filtered = GEORGIA_CITIES.filter(city => 
-                    city.name.toLowerCase().includes(term) || city.query.toLowerCase().includes(term)
-                );
-                renderCities(filtered);
+                const matches = city => city.name.toLowerCase().includes(term) || city.query.toLowerCase().includes(term);
+                renderCities(GEORGIA_CITIES.filter(matches), INTERNATIONAL_CITIES.filter(matches));
             });
 
             // Default to Tbilisi on first load
